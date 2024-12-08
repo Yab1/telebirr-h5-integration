@@ -59,7 +59,6 @@ const signString = (queryParamString, privateKey) => {
 };
 
 function createTimeStamp() {
-  console.log("🚀 ~ createTimeStamp", Math.round(new Date() / 1000) + "");
   return Math.round(new Date() / 1000) + "";
 }
 
