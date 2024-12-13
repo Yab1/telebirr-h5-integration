@@ -34,11 +34,9 @@ app.post("/create/order", async (req, res) => {
     console.log("RESPONSE", response);
 
     const rawRequest = response.rawRequest;
-    const url = `${process.env.PAYMENT_GATEWAY}${rawRequest}&version=1.0&trade_type=InApp`;
+    const url = `${process.env.PAYMENT_GATEWAY}${rawRequest}&version=1.0&trade_type=Checkout`;
 
-    console.log(url);
-
-    res.status(200).json(url);
+    res.status(200).send(url);
   } catch (error) {
     console.error("Error creating order:", error);
 
@@ -47,7 +45,13 @@ app.post("/create/order", async (req, res) => {
   console.log("************END RES***************");
 });
 
-const serverPort = process.env.PORT || 8000;
+app.post("/verify-payment", async (req, res) => {
+  try {
+    return res.status(200).send("PAYMENT VERIFIED");
+  } catch (error) {}
+});
+
+const serverPort = process.env.PORT || 8080;
 server.listen(serverPort, () => {
   console.log(`Server started, port: ${serverPort}`);
 });

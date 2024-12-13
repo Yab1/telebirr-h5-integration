@@ -63,7 +63,7 @@ function createRequestObject(requestBody) {
       trans_currency: trans_currency,
       total_amount: total_amount,
       merch_order_id: refNo,
-      trade_type: "InApp",
+      trade_type: "Checkout",
       timeout_express: "120m",
 
       // Merchant Information

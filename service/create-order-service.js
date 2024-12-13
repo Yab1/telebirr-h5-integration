@@ -17,10 +17,6 @@ module.exports = async function createOrder(req, res) {
       req.body,
       fabricToken
     );
-    console.log(
-      "🚀 ~ createOrder ~ requestCreateOrderResult:",
-      requestCreateOrderResult
-    );
 
     if (!requestCreateOrderResult || !requestCreateOrderResult.biz_content) {
       throw new Error("Failed to create order");
