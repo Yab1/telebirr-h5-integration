@@ -1,57 +1,80 @@
-const http = require("http");
 const dotenv = require("dotenv");
-const express = require("express");
-const bodyParser = require("body-parser");
-const createOrder = require("./service/create-order-service");
-
-const app = express();
-const server = http.createServer(app);
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+const pmlib = require("./sign-util-lib");
 
 dotenv.config();
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Authorization,X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method"
+// Fields not participating in signature
+const excludeFields = [
+  "sign",
+  "sign_type",
+  "header",
+  "refund_info",
+  "openType",
+  "raw_request",
+  "biz_content",
+];
+
+function signRequestObject(requestObject) {
+  const filteredRequestObjectKeys = [];
+  const filteredRequestObject = {};
+
+  // Spread the properties of requestObject and its biz_content property (if it exists),
+  // and convert it into an array of key-value pairs using Object.entries().
+  Object.entries({
+    ...requestObject,
+    ...(requestObject.biz_content || {}),
+  })
+    // Filter out any entries whose key is in the excludeFields array
+    .filter(([key]) => !excludeFields.includes(key))
+    // For each key-value pair, add the key to the filteredRequestObjectKeys array and the key-value pair to the filteredRequestObject object
+    .forEach(([key, value]) => {
+      filteredRequestObjectKeys.push(key);
+      filteredRequestObject[key] = value;
+    });
+
+  // sort by ascii
+  filteredRequestObjectKeys.sort();
+
+  // Mapping keys and values from filteredRequestObject to "key=value" format, resulting in an array like:
+  // ["appid=1311232930739201", "business_type=BuyGoods", ...]
+  const formattedKeyValuePairs = filteredRequestObjectKeys.map(
+    (key) => `${key}=${filteredRequestObject[key]}`
   );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PATCH, PUT, DELETE"
-  );
-  res.header("Allow", "GET, POST, PATCH, OPTIONS, PUT, DELETE");
-  next();
-});
 
-app.post("/create/order", async (req, res) => {
-  console.log("***********START RES****************");
-  try {
-    const response = await createOrder(req, res);
+  // Joining the formatted key-value pairs with "&" to create a single query string,
+  // resulting in a string like: "appid=1311232930739201&business_type=BuyGoods&..."
+  const queryParamString = formattedKeyValuePairs.join("&");
 
-    console.log("RESPONSE", response);
+  return signString(queryParamString, process.env.PRIVATE_KEY);
+}
 
-    const rawRequest = response.rawRequest;
-    const url = `${process.env.PAYMENT_GATEWAY}${rawRequest}&version=1.0&trade_type=Checkout`;
+const signString = (queryParamString, privateKey) => {
+  const sha256withrsa = new pmlib.rs.KJUR.crypto.Signature({
+    alg: "SHA256withRSAandMGF1",
+  });
+  sha256withrsa.init(privateKey);
+  sha256withrsa.updateString(queryParamString);
+  const sign = pmlib.rs.hextob64(sha256withrsa.sign());
+  return sign;
+};
 
-    res.status(200).send(url);
-  } catch (error) {
-    console.error("Error creating order:", error);
+function createTimeStamp() {
+  return Math.round(new Date() / 1000) + "";
+}
 
-    return res.status(500).json({ error: error.message });
+// create a 32 length random string
+function createNonceStr() {
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let str = "";
+  for (let i = 0; i < 32; i++) {
+    str += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  console.log("************END RES***************");
-});
+  return str;
+}
 
-app.post("/verify-payment", async (req, res) => {
-  try {
-    return res.status(200).send("PAYMENT VERIFIED");
-  } catch (error) {}
-});
-
-const serverPort = process.env.PORT || 8080;
-server.listen(serverPort, () => {
-  console.log(`Server started, port: ${serverPort}`);
-});
+module.exports = {
+  signString: signString,
+  signRequestObject: signRequestObject,
+  createTimeStamp: createTimeStamp,
+  createNonceStr: createNonceStr,
+};

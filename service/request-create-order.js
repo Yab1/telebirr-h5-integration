@@ -32,7 +32,7 @@ async function requestCreateOrder(requestBody, fabricToken) {
       "Error creating order:",
       error.response?.data || error.message
     );
-    throw error;
+    throw error.response;
   }
 }
 
@@ -80,7 +80,7 @@ function createRequestObject(requestBody) {
   request.sign = signRequestObject(request);
   request.sign_type = "SHA256WithRSA";
 
-  console.log("REQUEST:", request);
+  // console.log("REQUEST:", request);
 
   return request;
 }

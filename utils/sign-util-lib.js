@@ -1222,8 +1222,8 @@
               function L(t) {
                 return t != t;
               }
-            }.call(this));
-          }.call(this, r({}).Buffer));
+            }).call(this);
+          }).call(this, r({}).Buffer);
         }),
         function (r) {
           return e || t((e = { exports: {}, parent: r }), e.exports), e.exports;
@@ -15254,8 +15254,8 @@
         (g.asn1 = ht.asn1),
         (g.jws = ht.jws),
         (g.lang = ht.lang);
-    }.call(this));
-  }.call(this, r({}).Buffer));
+    }).call(this);
+  }).call(this, r({}).Buffer);
   var p = {
     nanoid: (t = 21) => {
       let e = "",
